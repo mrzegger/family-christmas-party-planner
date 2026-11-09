@@ -307,11 +307,11 @@ alter publication supabase_realtime add table public.party_planner_state;`;
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  placeholder={`Default PIN: ${hqPin}`}
+                  placeholder="••••"
                   className="mt-1.5 w-full rounded-xl border border-[#D4CBB8] bg-white px-4 py-3 text-center font-mono text-xl font-bold tracking-widest text-[#1B4332] focus:border-[#1B4332] focus:outline-none"
                 />
                 <p className="mt-1.5 text-center text-xs text-[#5C6B64]">
-                  Default organizer PIN is <span className="font-mono font-bold text-[#9E2A2B]">{hqPin}</span> (changeable in HQ Settings)
+                  For Organizing Committee members only
                 </p>
                 {pinError && (
                   <p className="mt-2 rounded-lg bg-red-50 px-3 py-1.5 text-center text-xs font-semibold text-red-700">

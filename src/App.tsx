@@ -830,12 +830,9 @@ export function App() {
 
       {/* Footer */}
       <footer className="mt-12 border-t border-[#E5DEC9] bg-[#F4EFE6] py-6 text-center text-xs text-[#5C6B64]">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 px-4 sm:px-6">
           <span>
-            <strong>{state.eventConfig.title}</strong> • Built for the Cousins Organizing Committee
-          </span>
-          <span>
-            Default Cousins HQ PIN: <code className="font-mono font-bold text-[#9E2A2B]">{state.eventConfig.hqPin}</code>
+            <strong>{state.eventConfig.title}</strong> • Organized by the Cousins Planning Committee
           </span>
         </div>
       </footer>
