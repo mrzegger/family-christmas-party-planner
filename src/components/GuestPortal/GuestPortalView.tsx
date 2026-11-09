@@ -20,6 +20,8 @@ import {
   Gift,
   Music,
   Camera,
+  X,
+  ChevronRight,
 } from 'lucide-react';
 import {
   EventConfig,
@@ -66,12 +68,11 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
   onBulkUpdateBranchRsvp,
   onAddFamilyMember,
 }) => {
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(
-    familyUnits[0]?.id || ''
-  );
+  // Active Family Branch Popup state (null = closed)
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
 
-  // Add missing member form state
-  const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+  // Add Missing Member / +1 Popup Modal state
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberAgeGroup, setNewMemberAgeGroup] = useState<AgeGroup>('Adult');
   const [newMemberDietary, setNewMemberDietary] = useState('');
@@ -100,12 +101,6 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
     const timer = setInterval(updateTimer, 30000);
     return () => clearInterval(timer);
   }, [eventConfig.eventDate]);
-
-  useEffect(() => {
-    if (!selectedBranchId && familyUnits.length > 0) {
-      setSelectedBranchId(familyUnits[0].id);
-    }
-  }, [familyUnits, selectedBranchId]);
 
   const selectedBranch = familyUnits.find((f) => f.id === selectedBranchId);
   const branchGuests = guests.filter((g) => g.familyUnitId === selectedBranchId);
@@ -162,12 +157,13 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
         plusOneOfGuestId: newMemberPlusOneOf || undefined,
       }
     );
+    const addedName = newMemberName.trim();
     setNewMemberName('');
     setNewMemberDietary('');
     setNewMemberSubFamily('');
     setNewMemberPlusOneOf('');
-    setShowAddMemberForm(false);
-    triggerSavedToast(`Added ${newMemberName.trim()} to ${selectedBranch?.name}!`);
+    setShowAddMemberModal(false);
+    triggerSavedToast(`Added ${addedName} to ${selectedBranch?.name}!`);
   };
 
   // Collect all sub-family names in the selected branch
@@ -413,11 +409,11 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
               Confirm Your Family Branch Attendance
             </h2>
             <p className="mt-1 text-xs text-[#5C6B64] sm:text-sm">
-              Pick your family unit below to toggle attendance and note any dietary restrictions for your household.
+              Tap your family branch below to open your household list, update RSVPs, or add missing family members / +1s.
             </p>
           </div>
 
-          {rsvpSavedBanner && (
+          {rsvpSavedBanner && !selectedBranch && (
             <div className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 shadow-2xs">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <span>{rsvpSavedBanner}</span>
@@ -425,12 +421,12 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
           )}
         </div>
 
-        {/* Family Branch Selector Pills */}
+        {/* Family Branch Selector Cards (Click opens Popup Modal) */}
         <div className="mt-6">
           <label className="block text-xs font-bold uppercase tracking-wider text-[#5C6B64]">
             Select Your Family Branch / Household
           </label>
-          <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {familyUnits.map((unit) => {
               const unitMembers = guests.filter(
                 (g) => g.familyUnitId === unit.id
@@ -438,30 +434,29 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
               const unitGoing = unitMembers.filter(
                 (g) => g.rsvpStatus === 'Going'
               ).length;
-              const isSelected = unit.id === selectedBranchId;
 
               return (
                 <button
                   key={unit.id}
                   type="button"
                   onClick={() => setSelectedBranchId(unit.id)}
-                  className={`flex items-center justify-between rounded-2xl border p-3.5 text-left transition-all ${
-                    isSelected
-                      ? 'border-[#1B4332] bg-[#1B4332]/5 ring-2 ring-[#1B4332]/20'
-                      : 'border-[#E5DEC9] bg-[#FAF6F0]/60 hover:border-[#C9B9A6] hover:bg-[#FAF6F0]'
-                  }`}
+                  className="group flex items-center justify-between rounded-2xl border border-[#E5DEC9] bg-[#FAF6F0]/70 p-4 text-left transition-all hover:border-[#1B4332] hover:bg-[#FAF6F0] hover:shadow-sm"
                 >
                   <div>
-                    <p className="text-sm font-bold text-[#1B4332]">
+                    <p className="text-base font-bold text-[#1B4332] group-hover:text-[#143325]">
                       {unit.name}
                     </p>
                     <p className="text-xs text-[#5C6B64]">{unit.branchLabel}</p>
+                    <span className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-bold text-[#9E2A2B]">
+                      <span>Open Household RSVP</span>
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
                   </div>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
                       unitGoing === unitMembers.length && unitMembers.length > 0
                         ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-[#E5DEC9]/70 text-[#1C2826]'
+                        : 'bg-[#E5DEC9]/80 text-[#1C2826]'
                     }`}
                   >
                     {unitGoing}/{unitMembers.length} Going
@@ -471,208 +466,6 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
             })}
           </div>
         </div>
-
-        {/* Selected Family Branch Member List */}
-        {selectedBranch && (
-          <div className="mt-6 rounded-2xl border border-[#E5DEC9] bg-[#FAF6F0] p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5DEC9] pb-4">
-              <div>
-                <h3 className="font-serif-display text-lg font-bold text-[#1B4332]">
-                  {selectedBranch.name}
-                </h3>
-                {selectedBranch.notes && (
-                  <p className="text-xs text-[#5C6B64]">
-                    {selectedBranch.notes}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onBulkUpdateBranchRsvp(selectedBranch.id, 'Going');
-                    triggerSavedToast(
-                      `Marked everyone in ${selectedBranch.name} as Going!`
-                    );
-                  }}
-                  className="rounded-xl bg-[#1B4332] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#143325]"
-                >
-                  Mark All Going
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddMemberForm((prev) => !prev)}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#1B4332]/30 bg-white px-3 py-1.5 text-xs font-bold text-[#1B4332] hover:bg-[#F3EDE2]"
-                >
-                  <UserPlus className="h-3.5 w-3.5 text-[#9E2A2B]" />
-                  <span>+ Add Missing Member / +1</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 1. Main Household Members */}
-            {mainHouseholdGuests.length > 0 && (
-              <div className="mt-3 divide-y divide-[#E5DEC9]">
-                {renderCollatedGuestGroup(mainHouseholdGuests)}
-              </div>
-            )}
-
-            {/* 2. Nested Sub-Family Sections */}
-            {branchSubFamilies.length > 0 && (
-              <div className="mt-5 space-y-4">
-                {branchSubFamilies.map((subName) => {
-                  const subMembers = branchGuests.filter(
-                    (g) => g.subFamilyName === subName
-                  );
-                  if (subMembers.length === 0) return null;
-                  const subGoing = subMembers.filter(
-                    (g) => g.rsvpStatus === 'Going'
-                  ).length;
-
-                  return (
-                    <div
-                      key={subName}
-                      className="rounded-2xl border border-[#DED6C6] bg-white/80 p-4 shadow-2xs"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFE9DC] pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <GitBranch className="h-4 w-4 text-[#1B4332]" />
-                          <h4 className="font-serif-display text-base font-bold text-[#1B4332]">
-                            {subName}
-                          </h4>
-                          <span className="rounded-md bg-[#1B4332]/10 px-2 py-0.5 text-[10px] font-bold text-[#1B4332]">
-                            Sub-Family ({subGoing}/{subMembers.length} Going)
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-2 divide-y divide-[#EFE9DC]">
-                        {renderCollatedGuestGroup(subMembers)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Inline Add Missing Family Member / +1 Form */}
-            {showAddMemberForm && (
-              <form
-                onSubmit={handleAddMemberSubmit}
-                className="mt-4 rounded-xl border border-[#1B4332]/25 bg-white p-4 shadow-xs"
-              >
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#1B4332]">
-                  Add Family Member or +1 to {selectedBranch.name}
-                </h4>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#5C6B64]">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={newMemberName}
-                      onChange={(e) => setNewMemberName(e.target.value)}
-                      placeholder="e.g., Full Name"
-                      className="mt-1 w-full rounded-lg border border-[#D4CBB8] px-3 py-1.5 text-xs focus:border-[#1B4332] focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#5C6B64]">
-                      Age Group
-                    </label>
-                    <select
-                      value={newMemberAgeGroup}
-                      onChange={(e) =>
-                        setNewMemberAgeGroup(e.target.value as AgeGroup)
-                      }
-                      className="mt-1 w-full rounded-lg border border-[#D4CBB8] px-3 py-1.5 text-xs focus:border-[#1B4332] focus:outline-none"
-                    >
-                      <option value="Adult">Adult</option>
-                      <option value="Kid">Kid</option>
-                      <option value="Senior">Senior</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#5C6B64]">
-                      Dietary Notes (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={newMemberDietary}
-                      onChange={(e) => setNewMemberDietary(e.target.value)}
-                      placeholder="e.g., No seafood"
-                      className="mt-1 w-full rounded-lg border border-[#D4CBB8] px-3 py-1.5 text-xs focus:border-[#1B4332] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Optional Sub-Family or +1 Link selectors */}
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {branchSubFamilies.length > 0 && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#5C6B64]">
-                        Group Under (Main Branch or Sub-Family)
-                      </label>
-                      <select
-                        value={newMemberSubFamily}
-                        onChange={(e) => setNewMemberSubFamily(e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-[#D4CBB8] px-3 py-1.5 text-xs focus:border-[#1B4332] focus:outline-none"
-                      >
-                        <option value="">
-                          Main Household ({selectedBranch.name})
-                        </option>
-                        {branchSubFamilies.map((sf) => (
-                          <option key={sf} value={sf}>
-                            Sub-Family: {sf}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#5C6B64]">
-                      Is this person a +1 / Partner? (Optional)
-                    </label>
-                    <select
-                      value={newMemberPlusOneOf}
-                      onChange={(e) => setNewMemberPlusOneOf(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-[#D4CBB8] px-3 py-1.5 text-xs focus:border-[#1B4332] focus:outline-none"
-                    >
-                      <option value="">No — Regular Family Member</option>
-                      {branchGuests
-                        .filter((g) => !g.isPlusOne)
-                        .map((g) => (
-                          <option key={g.id} value={g.id}>
-                            Yes — Partner / +1 of {g.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddMemberForm(false)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#5C6B64] hover:bg-[#FAF6F0]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-[#9E2A2B] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#7D2021]"
-                  >
-                    Add &amp; Mark Going
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        )}
       </div>
     </section>
   );
@@ -953,6 +746,292 @@ export const GuestPortalView: React.FC<GuestPortalViewProps> = ({
               {isRsvpEnabled && rsvpSectionElement}
             </>
           )}
+        </div>
+      )}
+
+      {/* POPUP 1: Selected Family Branch RSVP Modal */}
+      {selectedBranch && (
+        <div
+          onClick={() => setSelectedBranchId(null)}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 p-4 backdrop-blur-xs"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-[#E5DEC9] bg-[#FAF6F0] shadow-2xl"
+          >
+            {/* Modal Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5DEC9] bg-white px-6 py-4">
+              <div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#1B4332]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#1B4332]">
+                  {selectedBranch.branchLabel || 'Family Branch'}
+                </span>
+                <h3 className="font-serif-display mt-1 text-2xl font-bold text-[#1B4332]">
+                  {selectedBranch.name}
+                </h3>
+                {selectedBranch.notes && (
+                  <p className="text-xs text-[#5C6B64]">
+                    {selectedBranch.notes}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onBulkUpdateBranchRsvp(selectedBranch.id, 'Going');
+                    triggerSavedToast(
+                      `Marked everyone in ${selectedBranch.name} as Going!`
+                    );
+                  }}
+                  className="rounded-xl bg-[#1B4332] px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-[#143325]"
+                >
+                  Mark All Going
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#1B4332]/30 bg-[#FAF6F0] px-3.5 py-2 text-xs font-bold text-[#1B4332] hover:bg-[#F3EDE2]"
+                >
+                  <UserPlus className="h-3.5 w-3.5 text-[#9E2A2B]" />
+                  <span>+ Add Missing Member / +1</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBranchId(null)}
+                  title="Close"
+                  className="rounded-xl p-2 text-[#5C6B64] hover:bg-[#FAF6F0] hover:text-[#1C2826]"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {rsvpSavedBanner && (
+              <div className="flex items-center justify-center gap-1.5 border-b border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span>{rsvpSavedBanner}</span>
+              </div>
+            )}
+
+            {/* Scrollable Member List Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {branchGuests.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#D4CBB8] bg-white p-8 text-center">
+                  <p className="text-sm font-bold text-[#1B4332]">
+                    No members listed in {selectedBranch.name} yet
+                  </p>
+                  <p className="mt-1 text-xs text-[#5C6B64]">
+                    Click <strong>+ Add Missing Member / +1</strong> above to add your household members!
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* 1. Main Household Members */}
+                  {mainHouseholdGuests.length > 0 && (
+                    <div className="divide-y divide-[#E5DEC9]">
+                      {renderCollatedGuestGroup(mainHouseholdGuests)}
+                    </div>
+                  )}
+
+                  {/* 2. Nested Sub-Family Sections */}
+                  {branchSubFamilies.length > 0 && (
+                    <div className="mt-5 space-y-4">
+                      {branchSubFamilies.map((subName) => {
+                        const subMembers = branchGuests.filter(
+                          (g) => g.subFamilyName === subName
+                        );
+                        if (subMembers.length === 0) return null;
+                        const subGoing = subMembers.filter(
+                          (g) => g.rsvpStatus === 'Going'
+                        ).length;
+
+                        return (
+                          <div
+                            key={subName}
+                            className="rounded-2xl border border-[#DED6C6] bg-white p-4 shadow-2xs"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFE9DC] pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <GitBranch className="h-4 w-4 text-[#1B4332]" />
+                                <h4 className="font-serif-display text-base font-bold text-[#1B4332]">
+                                  {subName}
+                                </h4>
+                                <span className="rounded-md bg-[#1B4332]/10 px-2 py-0.5 text-[10px] font-bold text-[#1B4332]">
+                                  Sub-Family ({subGoing}/{subMembers.length} Going)
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="mt-2 divide-y divide-[#EFE9DC]">
+                              {renderCollatedGuestGroup(subMembers)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-[#E5DEC9] bg-white px-6 py-3.5">
+              <span className="text-xs text-[#5C6B64]">
+                All RSVP changes are saved automatically
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedBranchId(null)}
+                className="rounded-xl bg-[#1B4332] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#143325]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP 2: Add Missing Family Member / +1 Modal */}
+      {showAddMemberModal && selectedBranch && (
+        <div
+          onClick={() => setShowAddMemberModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-[#E5DEC9] bg-[#FAF6F0] p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between border-b border-[#E5DEC9] pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#9E2A2B] text-white">
+                  <UserPlus className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif-display text-lg font-bold text-[#1B4332]">
+                    Add Member or +1
+                  </h3>
+                  <p className="text-xs text-[#5C6B64]">
+                    Adding to <strong>{selectedBranch.name}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(false)}
+                className="rounded-lg p-1 text-[#5C6B64] hover:bg-[#E5DEC9]/50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMemberSubmit} className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-[#1C2826]">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  placeholder="e.g., Full Name"
+                  className="mt-1 w-full rounded-xl border border-[#D4CBB8] bg-white px-3.5 py-2 text-xs focus:border-[#1B4332] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1C2826]">
+                    Age Group
+                  </label>
+                  <select
+                    value={newMemberAgeGroup}
+                    onChange={(e) =>
+                      setNewMemberAgeGroup(e.target.value as AgeGroup)
+                    }
+                    className="mt-1 w-full rounded-xl border border-[#D4CBB8] bg-white px-3 py-2 text-xs focus:border-[#1B4332] focus:outline-none"
+                  >
+                    <option value="Adult">Adult</option>
+                    <option value="Kid">Kid</option>
+                    <option value="Senior">Senior</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1C2826]">
+                    Dietary Notes (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newMemberDietary}
+                    onChange={(e) => setNewMemberDietary(e.target.value)}
+                    placeholder="e.g., No seafood"
+                    className="mt-1 w-full rounded-xl border border-[#D4CBB8] bg-white px-3 py-2 text-xs focus:border-[#1B4332] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {branchSubFamilies.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-[#1C2826]">
+                    Group Under (Main Branch or Sub-Family)
+                  </label>
+                  <select
+                    value={newMemberSubFamily}
+                    onChange={(e) => setNewMemberSubFamily(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[#D4CBB8] bg-white px-3 py-2 text-xs focus:border-[#1B4332] focus:outline-none"
+                  >
+                    <option value="">
+                      Main Household ({selectedBranch.name})
+                    </option>
+                    {branchSubFamilies.map((sf) => (
+                      <option key={sf} value={sf}>
+                        Sub-Family: {sf}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-[#1C2826]">
+                  Is this person a +1 / Partner? (Optional)
+                </label>
+                <select
+                  value={newMemberPlusOneOf}
+                  onChange={(e) => setNewMemberPlusOneOf(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-[#D4CBB8] bg-white px-3 py-2 text-xs focus:border-[#1B4332] focus:outline-none"
+                >
+                  <option value="">No — Regular Family Member</option>
+                  {branchGuests
+                    .filter((g) => !g.isPlusOne)
+                    .map((g) => (
+                      <option key={g.id} value={g.id}>
+                        Yes — Partner / +1 of {g.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-[#5C6B64] hover:bg-[#E5DEC9]/50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#9E2A2B] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#7D2021]"
+                >
+                  Add &amp; Mark Going
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
